@@ -63,7 +63,7 @@ impl Database {
             let number_of_decimal_places = subrecord[17];
             let flag = subrecord[18];
             self.fields.push(Field {
-                name: String::from(name.unwrap().trim_matches(char::from(0))),
+                name: String::from(name.unwrap().trim_end_matches(char::from(0))),
                 field_type: FieldType(char::from(field_type)),
                 length: field_length,
                 number_of_decimal_places,
