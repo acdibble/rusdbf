@@ -12,13 +12,35 @@ mod tests {
 
   #[test]
   fn it_works() {
-    assert_eq!(2 + 2, 4);
     let fixture_path = get_test_fixture("dbase_03.dbf");
 
-    let mut database = rusdbf::Database::new(fixture_path.to_string_lossy().to_string());
-    database.initialize().unwrap();
-    for field in database.fields.iter() {
-      println!("{:?}", &field);
-    }
+    let mut database = rusdbf::Database::new(
+      fixture_path.to_string_lossy().to_string(),
+      "Point_ID".to_string(),
+      rusdbf::FieldType::Character,
+    );
+
+    database.initialize();
+    database.iterate_all_records();
+    // for field in database.fields.iter() {
+    //   println!("{:?}", &field);
+    // }
+  }
+
+  #[test]
+  fn it_also_works() {
+    let fixture_path = get_test_fixture("dbase_83.dbf");
+
+    let mut database = rusdbf::Database::new(
+      fixture_path.to_string_lossy().to_string(),
+      "ID".to_string(),
+      rusdbf::FieldType::Numeric,
+    );
+
+    database.initialize();
+    database.iterate_all_records();
+    // for field in database.fields.iter() {
+    //   println!("{:?}", &field);
+    // }
   }
 }
