@@ -39,6 +39,8 @@ mod tests {
 
     database.initialize();
     database.index_database();
+    let record = database.get_by_id(93);
+    println!("{:?}", record);
     // for field in database.fields.iter() {
     //   println!("{:?}", &field);
     // }

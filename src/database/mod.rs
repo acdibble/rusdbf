@@ -186,32 +186,31 @@ impl Database {
     }
   }
 
-  // pub fn get_by_string_id(&self, id: String) -> Vec<std::rc::Rc<&str>, Value> {
-  //   let mut file = self.open();
-  //   file
-  //     .seek(SeekFrom::Start(self.first_record_offset as u64))
-  //     .expect("failed to jump to first record");
-  //   let mut reader = BufReader::new(file);
-  //   let mut buffer = Vec::with_capacity(self.record_length);
-  //   let primary_field = self
-  //     .fields
-  //     .into_iter()
-  //     .find(|field| field.is_primary)
-  //     .expect("could not find primary field");
+  pub fn get_by_id(&self, id: u32) -> Option<Vec<(String, Value)>> {
+    let row_number = self.index.get(id);
+    if row_number.is_none() {
+      return None;
+    }
+    let row_number = row_number.unwrap() - 1;
+    let mut file = self.open();
+    file
+      .seek(SeekFrom::Start(
+        (self.record_length as u32 * row_number + self.first_record_offset) as u64,
+      ))
+      .expect("failed to jump to first record");
+    // let mut reader = BufReader::new(file);
+    let mut buffer = Vec::with_capacity(self.record_length);
+    file
+      .take(self.record_length as u64)
+      .read_to_end(&mut buffer)
+      .expect("failed to read record data");
 
-  //   for i in 0..self.record_count {
-  //     reader
-  //       .by_ref()
-  //       .take(self.record_length as u64)
-  //       .read_to_end(&mut buffer)
-  //       .expect("failed to read record data");
+    let record = self
+      .parse_record(&buffer, row_number + 1)
+      .into_iter()
+      .map(|(name, value)| (String::from(name), value))
+      .collect();
 
-  //     let record = self.parse_record(&buffer, i + 1);
-  //     let is_record = record
-  //       .into_iter()
-  //       .find(|(name, _value)| *name == primary_field.name);
-  //   }
-
-  //   Vec::new()
-  // }
+    Some(record)
+  }
 }
