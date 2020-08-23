@@ -4,16 +4,10 @@ use std::convert::TryInto;
 pub struct Field {
   pub name: String,
   pub length: usize,
-  decimal_precision: u8,
-  flag: u8,
+  pub decimal_precision: u8,
+  pub flag: u8,
   pub field_type: FieldType,
   pub is_primary: bool,
-}
-
-impl Field {
-  fn to_value(&self, data: &[u8]) -> Value {
-    self.field_type.to_value(self, data)
-  }
 }
 
 #[derive(Debug)]
@@ -65,7 +59,7 @@ impl FieldType {
     }
   }
 
-  pub fn to_value(&self, field: &Field, data: &[u8]) -> Value {
+  pub fn to_value(&self, data: &[u8]) -> Value {
     match self {
       FieldType::Character | FieldType::Currency | FieldType::Date | FieldType::DateTime => {
         let trimmed = String::from(

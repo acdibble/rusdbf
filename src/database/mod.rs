@@ -154,6 +154,7 @@ impl Database {
       .expect("unable to find primary key");
 
     for i in 0..self.record_count {
+      buffer.clear();
       reader
         .by_ref()
         .take(self.record_length as u64)
@@ -168,12 +169,19 @@ impl Database {
         .1
       {
         Value::Character(string) => Some(string.parse().expect("couldn't parse string to u32")),
+        Value::Numeric(number) => Some(*number as u32),
         _ => None,
       };
-      println!("{:?}", record);
+      println!("id: {:?}", id);
+      println!("record: {:?}", record);
 
-      if let Some(number) = id {
-        self.index.set(number, i + 1)
+      let deleted = record.iter().find(|(name, _value)| *name == DELETED);
+
+      if id.is_some() && deleted.is_some() {
+        match deleted.unwrap().1 {
+          Value::Deleted(false) => self.index.set(id.unwrap(), i + 1),
+          _ => (),
+        }
       }
     }
   }
