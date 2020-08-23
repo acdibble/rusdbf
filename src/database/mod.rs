@@ -1,22 +1,14 @@
-mod field_type;
+mod field;
+mod map;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
 
-pub use crate::database::field_type::*;
+pub use crate::database::field::*;
+pub use crate::database::map::*;
 
 static ROW_NUMBER: &'static str = "row_number";
 static DELETED: &'static str = "deleted";
-
-#[derive(Debug)]
-pub struct Field {
-  name: String,
-  length: usize,
-  decimal_precision: u8,
-  flag: u8,
-  field_type: FieldType,
-  is_primary: bool,
-}
 
 pub struct Database {
   path: String,
@@ -27,6 +19,7 @@ pub struct Database {
   pub fields: Vec<Field>,
   primary_key: String,
   primary_type: FieldType,
+  index: Map,
 }
 
 impl Database {
@@ -40,6 +33,7 @@ impl Database {
       fields: Vec::new(),
       primary_key,
       primary_type,
+      index: Map::new(),
     }
   }
 
@@ -72,7 +66,7 @@ impl Database {
       let decimal_precision = subrecord[17];
       let flag = subrecord[18];
       let new_field = Field {
-        name,
+        name: name,
         is_primary: is_primary && field_type == self.primary_type,
         field_type,
         length: field_length as usize,
@@ -146,13 +140,18 @@ impl Database {
     return record;
   }
 
-  pub fn iterate_all_records(&self) {
+  pub fn index_database(&mut self) {
     let mut file = self.open();
     file
       .seek(SeekFrom::Start(self.first_record_offset as u64))
       .expect("failed to jump to first record");
     let mut reader = BufReader::new(file);
     let mut buffer = Vec::with_capacity(self.record_length);
+    let primary_column = &self
+      .fields
+      .iter()
+      .find(|field| field.is_primary)
+      .expect("unable to find primary key");
 
     for i in 0..self.record_count {
       reader
@@ -162,7 +161,49 @@ impl Database {
         .expect("failed to read record data");
 
       let record = self.parse_record(&buffer, i + 1);
+      let id: Option<u32> = match &record
+        .iter()
+        .find(|(name, _value)| *name == primary_column.name)
+        .expect("unable to find id for record")
+        .1
+      {
+        Value::Character(string) => Some(string.parse().expect("couldn't parse string to u32")),
+        _ => None,
+      };
       println!("{:?}", record);
+
+      if let Some(number) = id {
+        self.index.set(number, i + 1)
+      }
     }
   }
+
+  // pub fn get_by_string_id(&self, id: String) -> Vec<std::rc::Rc<&str>, Value> {
+  //   let mut file = self.open();
+  //   file
+  //     .seek(SeekFrom::Start(self.first_record_offset as u64))
+  //     .expect("failed to jump to first record");
+  //   let mut reader = BufReader::new(file);
+  //   let mut buffer = Vec::with_capacity(self.record_length);
+  //   let primary_field = self
+  //     .fields
+  //     .into_iter()
+  //     .find(|field| field.is_primary)
+  //     .expect("could not find primary field");
+
+  //   for i in 0..self.record_count {
+  //     reader
+  //       .by_ref()
+  //       .take(self.record_length as u64)
+  //       .read_to_end(&mut buffer)
+  //       .expect("failed to read record data");
+
+  //     let record = self.parse_record(&buffer, i + 1);
+  //     let is_record = record
+  //       .into_iter()
+  //       .find(|(name, _value)| *name == primary_field.name);
+  //   }
+
+  //   Vec::new()
+  // }
 }

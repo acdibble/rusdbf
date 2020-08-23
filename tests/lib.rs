@@ -21,7 +21,7 @@ mod tests {
     );
 
     database.initialize();
-    database.iterate_all_records();
+    database.index_database();
     // for field in database.fields.iter() {
     //   println!("{:?}", &field);
     // }
@@ -38,7 +38,7 @@ mod tests {
     );
 
     database.initialize();
-    database.iterate_all_records();
+    database.index_database();
     // for field in database.fields.iter() {
     //   println!("{:?}", &field);
     // }
