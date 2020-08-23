@@ -18,8 +18,6 @@ pub struct Field {
   is_primary: bool,
 }
 
-impl FieldType {}
-
 pub struct Database {
   path: String,
   version: u8,
