@@ -2,6 +2,8 @@ use std::convert::TryInto;
 
 #[derive(Debug)]
 pub enum Value {
+  RowNumber(u32), // meta field
+  Deleted(bool),  // meta field
   Character(String),
   Currency(String),
   Numeric(f32),

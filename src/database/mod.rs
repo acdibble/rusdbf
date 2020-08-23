@@ -1,10 +1,12 @@
 mod field_type;
 
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
 
 pub use crate::database::field_type::*;
+
+static ROW_NUMBER: &'static str = "row_number";
+static DELETED: &'static str = "deleted";
 
 #[derive(Debug)]
 pub struct Field {
@@ -129,15 +131,18 @@ impl Database {
     self.parse_subrecords(&mut reader)
   }
 
-  pub fn parse_record(&self, buffer: &Vec<u8>) -> HashMap<&String, Value> {
-    let mut position = 0;
+  pub fn parse_record(&self, buffer: &Vec<u8>, row_number: u32) -> Vec<(&str, Value)> {
+    let mut position = 1;
     let slice = buffer.as_slice();
-    let mut record = HashMap::default();
+    let mut record: Vec<(&str, Value)> = Vec::with_capacity(self.fields.len() + 2);
+
+    record.push((ROW_NUMBER, Value::RowNumber(row_number)));
+    record.push((DELETED, Value::Deleted(slice[0] == 0x2A)));
 
     for field in &self.fields {
       let data_for_field = &slice[position..(position + field.length)];
       position += field.length;
-      record.insert(&field.name, field.field_type.to_value(data_for_field));
+      record.push((&field.name, field.field_type.to_value(data_for_field)));
     }
 
     return record;
@@ -151,14 +156,14 @@ impl Database {
     let mut reader = BufReader::new(file);
     let mut buffer = Vec::with_capacity(self.record_length);
 
-    for _ in 0..self.record_count {
+    for i in 0..self.record_count {
       reader
         .by_ref()
         .take(self.record_length as u64)
         .read_to_end(&mut buffer)
         .expect("failed to read record data");
 
-      let record = self.parse_record(&buffer);
+      let record = self.parse_record(&buffer, i + 1);
       println!("{:?}", record);
     }
   }
