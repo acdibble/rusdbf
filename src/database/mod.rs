@@ -192,14 +192,15 @@ impl Database {
       return None;
     }
     let row_number = row_number.unwrap() - 1;
+    let mut buffer = Vec::with_capacity(self.record_length);
     let mut file = self.open();
+
     file
       .seek(SeekFrom::Start(
         (self.record_length as u32 * row_number + self.first_record_offset) as u64,
       ))
-      .expect("failed to jump to first record");
-    // let mut reader = BufReader::new(file);
-    let mut buffer = Vec::with_capacity(self.record_length);
+      .expect("failed to jump to correct record");
+
     file
       .take(self.record_length as u64)
       .read_to_end(&mut buffer)
